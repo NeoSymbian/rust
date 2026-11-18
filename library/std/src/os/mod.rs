@@ -107,6 +107,8 @@ pub mod haiku;
 pub mod hermit;
 #[cfg(target_os = "horizon")]
 pub mod horizon;
+#[cfg(target_os = "symbian")]
+pub mod symbian;
 #[cfg(target_os = "hurd")]
 pub mod hurd;
 #[cfg(target_os = "illumos")]

@@ -3,6 +3,8 @@
 mod configure_builtins;
 mod helpers;
 mod pal;
+#[cfg(target_os = "symbian")]
+pub use pal::symbian::init as symbian_init;
 mod personality;
 
 pub mod alloc;

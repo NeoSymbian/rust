@@ -88,3 +88,7 @@ rustc-std-workspace-std = { path = 'rustc-std-workspace-std' }
 
 # See comments in `library/windows-sys/Cargo.toml` for why this is patched
 windows-sys = { path = 'windows-sys' }
+
+# NeoSymbian: target_os = "symbian" (src/unix/symbian); NeoSymbian/browser tools/neosymbian-toolchain.sh points this at
+# a local checkout
+libc = { git = 'https://github.com/NeoSymbian/libc', branch = 'neosymbian' }

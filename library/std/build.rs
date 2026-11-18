@@ -46,6 +46,7 @@ fn main() {
         || target_os.starts_with("solid")
         || (target_vendor == "nintendo" && target_env == "newlib")
         || target_os == "vita"
+        || target_os == "symbian"
         || target_os == "aix"
         || target_os == "nto"
         || target_os == "qnx"

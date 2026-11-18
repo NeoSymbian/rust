@@ -405,7 +405,7 @@ pub fn current_exe() -> io::Result<PathBuf> {
     path.canonicalize()
 }
 
-#[cfg(any(target_os = "espidf", target_os = "horizon", target_os = "vita"))]
+#[cfg(any(target_os = "espidf", target_os = "horizon", target_os = "symbian", target_os = "vita"))]
 pub fn current_exe() -> io::Result<PathBuf> {
     crate::sys::pal::unsupported()
 }
@@ -462,6 +462,7 @@ pub fn home_dir() -> Option<PathBuf> {
         target_os = "vxworks",
         target_os = "espidf",
         target_os = "horizon",
+        target_os = "symbian",
         target_os = "vita",
         target_os = "nuttx",
         all(target_vendor = "apple", not(target_os = "macos")),
@@ -476,6 +477,7 @@ pub fn home_dir() -> Option<PathBuf> {
         target_os = "vxworks",
         target_os = "espidf",
         target_os = "horizon",
+        target_os = "symbian",
         target_os = "vita",
         target_os = "nuttx",
         all(target_vendor = "apple", not(target_os = "macos")),

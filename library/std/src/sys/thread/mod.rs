@@ -52,6 +52,7 @@ cfg_select! {
         mod unix;
         #[cfg(not(any(
             target_env = "newlib",
+            target_os = "symbian",
             target_os = "l4re",
             target_os = "emscripten",
             target_os = "redox",
@@ -82,6 +83,7 @@ cfg_select! {
         mod unsupported;
         #[cfg(any(
             target_env = "newlib",
+            target_os = "symbian",
             target_os = "l4re",
             target_os = "emscripten",
             target_os = "redox",

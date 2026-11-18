@@ -78,7 +78,8 @@ impl UnixListener {
                 target_os = "windows",
                 target_os = "redox",
                 target_os = "espidf",
-                target_os = "horizon"
+                target_os = "horizon",
+                target_os = "symbian"
             ))]
             const backlog: core::ffi::c_int = 128;
             #[cfg(any(
@@ -97,6 +98,7 @@ impl UnixListener {
                 target_os = "redox",
                 target_os = "espidf",
                 target_os = "horizon",
+                target_os = "symbian",
                 target_os = "linux",
                 target_os = "freebsd",
                 target_os = "openbsd",

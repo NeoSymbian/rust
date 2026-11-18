@@ -278,6 +278,7 @@ cfg_select! {
         target_os = "redox",
         target_os = "espidf",
         target_os = "horizon",
+        target_os = "symbian",
         target_os = "vita",
         target_os = "nto",
         target_os = "qnx",
@@ -993,6 +994,7 @@ impl Drop for DirStream {
             target_os = "hurd",
             target_os = "espidf",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vxworks",
             target_os = "rtems",
             target_os = "nuttx",
@@ -1542,6 +1544,7 @@ impl File {
                 target_os = "redox",
                 target_os = "espidf",
                 target_os = "horizon",
+                target_os = "symbian",
                 target_os = "nuttx",
                 target_os = "l4re"
             ) => {
@@ -1630,6 +1633,7 @@ impl File {
     target_os = "redox",
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "nuttx",
 )))]
 fn file_time_to_timespec(time: Option<SystemTime>) -> io::Result<libc::timespec> {
@@ -2057,6 +2061,7 @@ pub fn link(original: &CStr, link: &CStr) -> io::Result<()> {
             target_os = "espidf",
             // Other misc platforms
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vita",
             target_os = "l4re",
             target_env = "nto70",
@@ -2143,6 +2148,7 @@ fn set_times_impl(p: &CStr, times: FileTimes, follow_symlinks: bool) -> io::Resu
             target_os = "redox",
             target_os = "espidf",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "nuttx",
             target_os = "vita",
             target_os = "rtems"
@@ -2454,6 +2460,7 @@ pub use remove_dir_impl::remove_dir_all;
     target_os = "redox",
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "vita",
     target_os = "nto",
     target_os = "qnx",
@@ -2470,6 +2477,7 @@ mod remove_dir_impl {
     target_os = "redox",
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "vita",
     target_os = "nto",
     target_os = "qnx",

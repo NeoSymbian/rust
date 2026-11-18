@@ -125,6 +125,17 @@ pub mod os {
     pub const EXE_EXTENSION: &str = "";
 }
 
+#[cfg(target_os = "symbian")]
+pub mod os {
+    pub const FAMILY: &str = "unix";
+    pub const OS: &str = "symbian";
+    pub const DLL_PREFIX: &str = "";
+    pub const DLL_SUFFIX: &str = ".dll";
+    pub const DLL_EXTENSION: &str = "dll";
+    pub const EXE_SUFFIX: &str = ".exe";
+    pub const EXE_EXTENSION: &str = "exe";
+}
+
 #[cfg(target_os = "horizon")]
 pub mod os {
     pub const FAMILY: &str = "unix";

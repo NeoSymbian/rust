@@ -44,6 +44,7 @@ pub use imp::{
         not(any(
             target_os = "espidf",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vita",
             target_os = "nuttx",
             target_os = "l4re"
@@ -82,6 +83,7 @@ pub fn output(cmd: &mut Command) -> crate::io::Result<(ExitStatus, Vec<u8>, Vec<
         not(any(
             target_os = "espidf",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vita",
             target_os = "nuttx",
             target_os = "l4re"

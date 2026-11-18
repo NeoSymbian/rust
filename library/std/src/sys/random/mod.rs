@@ -44,6 +44,10 @@ cfg_select! {
         mod hermit;
         pub use hermit::fill_bytes;
     }
+    target_os = "symbian" => {
+        mod symbian;
+        pub use symbian::fill_bytes;
+    }
     any(target_os = "horizon", target_os = "cygwin") => {
         // FIXME(horizon): add arc4random_buf to shim-3ds
         mod getrandom;

@@ -140,6 +140,7 @@ impl Condvar {
     target_vendor = "apple",
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "l4re",
     target_os = "redox",
     target_os = "teeos",
@@ -197,6 +198,7 @@ impl Condvar {
     target_os = "android",
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "l4re",
     target_os = "redox",
     target_os = "teeos",
@@ -208,7 +210,7 @@ impl Condvar {
     /// # Safety
     /// May only be called once per instance of `Self`.
     pub unsafe fn init(self: Pin<&mut Self>) {
-        if cfg!(any(target_os = "espidf", target_os = "horizon", target_os = "teeos")) {
+        if cfg!(any(target_os = "espidf", target_os = "horizon", target_os = "symbian", target_os = "teeos")) {
             // NOTE: ESP-IDF's PTHREAD_COND_INITIALIZER support is not released yet
             // So on that platform, init() should always be called.
             //

@@ -60,6 +60,8 @@ mod platform {
     pub use crate::os::haiku::*;
     #[cfg(target_os = "horizon")]
     pub use crate::os::horizon::*;
+    #[cfg(target_os = "symbian")]
+    pub use crate::os::symbian::*;
     #[cfg(target_os = "hurd")]
     pub use crate::os::hurd::*;
     #[cfg(target_os = "illumos")]

@@ -27,7 +27,7 @@ pub unsafe fn alloc(layout: Layout) -> *mut u8 {
     // So only rely on MIN_ALIGN if size >= align.
     // Also see <https://github.com/rust-lang/rust/issues/45955> and
     // <https://github.com/rust-lang/rust/issues/62251#issuecomment-507580914>.
-    if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+    if plain(layout.align(), layout.size()) {
         unsafe { libc::malloc(layout.size()) as *mut u8 }
     } else {
         // `posix_memalign` returns a non-aligned value if supplied a very
@@ -49,7 +49,7 @@ pub unsafe fn alloc(layout: Layout) -> *mut u8 {
 #[inline]
 pub unsafe fn alloc_zeroed(layout: Layout) -> *mut u8 {
     // See the comment above in `alloc` for why this check looks the way it does.
-    if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+    if plain(layout.align(), layout.size()) {
         unsafe { libc::calloc(layout.size(), 1) as *mut u8 }
     } else {
         let ptr = unsafe { alloc(layout) };
@@ -60,14 +60,27 @@ pub unsafe fn alloc_zeroed(layout: Layout) -> *mut u8 {
     }
 }
 
+/// Whether `malloc` alone gives this alignment.
+#[inline]
+fn plain(align: usize, size: usize) -> bool {
+    // Symbian's heap (RHeap) aligns every cell to 8 = MIN_ALIGN, whatever its size; and the same answer for the
+    // old and new size keeps `realloc` and `dealloc` on the allocation's own path.
+    align <= MIN_ALIGN && (cfg!(target_os = "symbian") || align <= size)
+}
+
 #[inline]
 pub unsafe fn dealloc(ptr: *mut u8, _layout: Layout) {
+    #[cfg(target_os = "symbian")]
+    if !plain(_layout.align(), _layout.size()) {
+        // aligned_malloc's header: the start of the underlying allocation
+        return unsafe { libc::free(*(ptr as *mut *mut libc::c_void).sub(1)) };
+    }
     unsafe { libc::free(ptr as *mut libc::c_void) }
 }
 
 #[inline]
 pub unsafe fn realloc(ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
-    if layout.align() <= MIN_ALIGN && layout.align() <= new_size {
+    if plain(layout.align(), new_size) {
         unsafe { libc::realloc(ptr as *mut libc::c_void, new_size) as *mut u8 }
     } else {
         unsafe { realloc_fallback(ptr, layout, new_size) }
@@ -77,6 +90,25 @@ pub unsafe fn realloc(ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 
 cfg_select! {
     // We use posix_memalign wherever possible, but some targets have very incomplete POSIX coverage
     // so we need a fallback for those.
+    target_os = "symbian" => {
+        // P.I.P.S. has no memalign/posix_memalign: over-allocate and keep the malloc result just below the
+        // aligned pointer (dealloc reads it back).
+        #[inline]
+        unsafe fn aligned_malloc(layout: &Layout) -> *mut u8 {
+            let Some(total) = layout.size().checked_add(layout.align() + size_of::<usize>()) else {
+                return ptr::null_mut();
+            };
+            let raw = unsafe { libc::malloc(total) } as *mut u8;
+            if raw.is_null() {
+                return raw;
+            }
+            let start = raw as usize + size_of::<usize>();
+            let aligned = (start + layout.align() - 1) & !(layout.align() - 1);
+            let ptr = raw.wrapping_add(aligned - raw as usize);
+            unsafe { *(ptr as *mut *mut u8).sub(1) = raw };
+            ptr
+        }
+    }
     any(target_os = "horizon", target_os = "vita") => {
         #[inline]
         unsafe fn aligned_malloc(layout: &Layout) -> *mut u8 {

@@ -1,5 +1,5 @@
 #[cfg_attr(
-    any(target_os = "espidf", target_os = "horizon", target_os = "nuttx", target_os = "l4re"),
+    any(target_os = "espidf", target_os = "horizon", target_os = "symbian", target_os = "nuttx", target_os = "l4re"),
     allow(unused)
 )]
 mod common;
@@ -16,6 +16,7 @@ cfg_select! {
     any(
         target_os = "espidf",
         target_os = "horizon",
+        target_os = "symbian",
         target_os = "vita",
         target_os = "nuttx",
         target_os = "l4re"

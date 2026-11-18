@@ -6,6 +6,8 @@ pub mod conf;
 #[cfg(target_os = "fuchsia")]
 pub mod fuchsia;
 pub mod stack_overflow;
+#[cfg(target_os = "symbian")]
+pub mod symbian;
 pub mod sync;
 pub mod thread_parking;
 pub mod time;
@@ -81,6 +83,7 @@ pub unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
             target_os = "redox",
             target_os = "l4re",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vita",
             target_os = "rtems",
             // The poll on Darwin doesn't set POLLNVAL for closed fds when `events == 0`.
@@ -126,6 +129,7 @@ pub unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
             target_os = "vxworks",
             target_os = "l4re",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vita",
         )))]
         {
@@ -143,6 +147,7 @@ pub unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
             target_os = "emscripten",
             target_os = "fuchsia",
             target_os = "horizon",
+            target_os = "symbian",
             target_os = "vxworks",
             target_os = "vita",
             target_os = "l4re",
@@ -191,6 +196,7 @@ pub unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "vxworks",
     target_os = "vita",
 )))]
@@ -202,6 +208,7 @@ static ON_BROKEN_PIPE_USED: crate::sync::atomic::Atomic<bool> =
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "vxworks",
     target_os = "vita",
     target_os = "nuttx",
@@ -371,6 +378,7 @@ cfg_select! {
 #[cfg(any(
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "vita",
     target_os = "nuttx",
     target_os = "l4re",
@@ -382,6 +390,7 @@ pub fn unsupported<T>() -> crate::io::Result<T> {
 #[cfg(any(
     target_os = "espidf",
     target_os = "horizon",
+    target_os = "symbian",
     target_os = "vita",
     target_os = "nuttx",
     target_os = "l4re",
