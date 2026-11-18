@@ -5,7 +5,7 @@
 
 #![unstable(feature = "symbian_rt", issue = "none")]
 
-/// Run `main` as a std program: the thread's cleanup stack and argc/argv first (P.I.P.S.'s crt0), stdout flushed
+/// Run `main` as a std program: the thread's cleanup stack and argc/argv (the process command line) first, stdout flushed
 /// after. Returns `main`'s result for `E32Main` to return (the process exit reason).
 pub fn start(main: fn() -> i32) -> i32 {
     crate::sys::symbian_init();

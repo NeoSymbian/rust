@@ -322,6 +322,13 @@ impl Backtrace {
 
     // Capture a backtrace which start just before the function addressed by
     // `ip`
+    // Symbian: no unwinder in the EXE (libgcc's needs C++ runtime symbols Symbian lacks)
+    #[cfg(target_os = "symbian")]
+    fn create(_ip: usize) -> Backtrace {
+        Backtrace { inner: Inner::Unsupported }
+    }
+
+    #[cfg(not(target_os = "symbian"))]
     fn create(ip: usize) -> Backtrace {
         let _lock = lock();
         let mut frames = Vec::new();

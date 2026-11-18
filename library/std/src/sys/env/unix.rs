@@ -53,8 +53,14 @@ pub unsafe fn environ() -> *mut *const *const c_char {
     unsafe { environ }
 }
 
+// Symbian: P.I.P.S. exports environ as a function.
+#[cfg(target_os = "symbian")]
+pub unsafe fn environ() -> *mut *const *const c_char {
+    unsafe { libc::__environ() as *mut *const *const c_char }
+}
+
 // Use the `environ` static which is part of POSIX.
-#[cfg(not(any(target_os = "freebsd", target_vendor = "apple")))]
+#[cfg(not(any(target_os = "freebsd", target_vendor = "apple", target_os = "symbian")))]
 pub unsafe fn environ() -> *mut *const *const c_char {
     unsafe extern "C" {
         static mut environ: *const *const c_char;

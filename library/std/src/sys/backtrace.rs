@@ -51,6 +51,13 @@ impl BacktraceLock<'_> {
 /// # Safety
 ///
 /// This function is not Sync. The caller must hold a mutex lock, or there must be only one thread in the program.
+// Symbian: no unwinder (see Backtrace::create)
+#[cfg(target_os = "symbian")]
+unsafe fn _print_fmt(fmt: &mut fmt::Formatter<'_>, _print_fmt: PrintFmt) -> fmt::Result {
+    writeln!(fmt, "backtraces are not supported on Symbian")
+}
+
+#[cfg(not(target_os = "symbian"))]
 unsafe fn _print_fmt(fmt: &mut fmt::Formatter<'_>, print_fmt: PrintFmt) -> fmt::Result {
     // Always 'fail' to get the cwd when running under Miri -
     // this allows Miri to display backtraces in isolation mode

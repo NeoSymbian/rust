@@ -30,7 +30,7 @@ cfg_select! {
         target_os = "psp",
         target_os = "xous",
         target_os = "solid_asp3",
-        all(target_family = "unix", not(target_os = "espidf"), not(target_os = "nuttx")),
+        all(target_family = "unix", not(target_os = "espidf"), not(target_os = "nuttx"), not(target_os = "symbian")),
         all(target_vendor = "fortanix", target_env = "sgx"),
     ) => {
         mod gcc;
@@ -40,6 +40,7 @@ cfg_select! {
         // - os=none ("bare metal" targets)
         // - os=uefi
         // - os=espidf
+        // - os=symbian (panic=abort only: no unwinder in Symbian EXEs)
         // - os=hermit
         // - os=motor
         // - nvptx64-nvidia-cuda

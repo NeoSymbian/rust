@@ -1,8 +1,8 @@
 //! NeoSymbian (EKA2) calls std needs besides P.I.P.S.: the kernel's debug port, its secure RNG and the start-up a
-//! P.I.P.S. program expects (a cleanup stack, then `__crt0` for argc/argv/environ). Executive calls are issued as
+//! P.I.P.S. program expects (a cleanup stack; argc/argv from the process command line). Executive calls are issued as
 //! NeoSymbian's `e32-sys` crate issues them (`swi #n`, numbers from the kernel's `execs.txt`).
 
-use crate::ffi::{c_char, c_int, c_void};
+use crate::ffi::{c_int, c_void};
 
 // Executive call numbers (NeoSymbian/e32-rs `e32-sys/src/execs.rs`).
 const EXEC_DEBUG_PRINT: u32 = 0x56;
@@ -69,10 +69,34 @@ unsafe extern "C" {
     // euser.dll: CTrapCleanup::New()
     #[link_name = "_ZN12CTrapCleanup3NewEv"]
     fn ctrapcleanup_new() -> *mut c_void;
-    // libc.dll: __crt0(int& argc, char**& argv, char**& envp), what P.I.P.S.'s C start-up calls
-    #[link_name = "_Z6__crt0RiRPPcS2_"]
-    fn crt0(argc: *mut c_int, argv: *mut *mut *mut c_char, envp: *mut *mut *mut c_char);
+    // euser.dll: User::CommandLineLength(), User::CommandLine(TDes16&)
+    #[link_name = "_ZN4User17CommandLineLengthEv"]
+    fn command_line_length() -> c_int;
+    #[link_name = "_ZN4User11CommandLineER6TDes16"]
+    fn command_line(des: *mut Ptr16);
+    // euser.dll: RProcess::FileName() const, a TFileName returned through the hidden result pointer
+    #[link_name = "_ZNK8RProcess8FileNameEv"]
+    fn process_file_name(out: *mut FileName, this: *const i32);
 }
+
+/// `TPtr16`: `{ len | EPtr << 28, max_len, ptr }`.
+#[repr(C)]
+struct Ptr16 {
+    len_type: u32,
+    max: u32,
+    ptr: *mut u16,
+}
+
+/// `TFileName` = `TBuf16<256>`: `{ len | EBuf << 28, max_len, data }`.
+#[repr(C)]
+struct FileName {
+    len_type: u32,
+    max: u32,
+    data: [u16; 256],
+}
+
+const KCURRENT_PROCESS_HANDLE: i32 = 0xffff8000u32 as i32;
+const KMASK_DES_LENGTH: u32 = 0x0fff_ffff;
 
 /// A cleanup stack for the calling thread: P.I.P.S. uses one (without it `opendir` panics E32USER-CBase 69).
 /// Threads created by `pthread_create` get theirs from libpthread.
@@ -81,15 +105,91 @@ pub fn cleanup_stack() {
     unsafe { ctrapcleanup_new() };
 }
 
-/// The process start-up a P.I.P.S. program gets from its crt0: the cleanup stack, then argc/argv for `env::args`.
+/// The EXE's path and its command line, split at spaces ("double quotes" group words), as `env::args` sees them.
+/// (P.I.P.S.'s own `__crt0` is not used: it first asks P.I.P.S.'s IPC server whether `popen`/`posix_spawn` made the
+/// process, and blocks when that server is not running.)
+fn kernel_args() -> Vec<Vec<u8>> {
+    let mut file = FileName { len_type: 3 << 28, max: 256, data: [0; 256] };
+    // SAFETY: the callee constructs the TFileName in `file`; `this` is a current-process RProcess.
+    unsafe { process_file_name(&mut file, &KCURRENT_PROCESS_HANDLE) };
+    let n = ((file.len_type & KMASK_DES_LENGTH) as usize).min(256);
+    let mut args = vec![String::from_utf16_lossy(&file.data[..n]).into_bytes()];
+
+    // SAFETY: plain call. One spare character, as P.I.P.S.'s crt0 allocates: a buffer of exactly the reported
+    // length hangs the EXE in User::CommandLine (seen on the WB1 kernel).
+    let len = unsafe { command_line_length() }.max(0) as usize + 1;
+    let mut buf = vec![0u16; len];
+    let mut des = Ptr16 { len_type: 2 << 28, max: len as u32, ptr: buf.as_mut_ptr() };
+    // SAFETY: `des` describes `buf`; the kernel writes at most `len` characters and the new length.
+    unsafe { command_line(&mut des) };
+    let got = ((des.len_type & KMASK_DES_LENGTH) as usize).min(len);
+    let line = String::from_utf16_lossy(&buf[..got]);
+    let (mut word, mut quoted, mut any) = (String::new(), false, false);
+    for c in line.chars() {
+        match c {
+            '"' => {
+                quoted = !quoted;
+                any = true;
+            }
+            c if c.is_whitespace() && !quoted => {
+                if any {
+                    args.push(crate::mem::take(&mut word).into_bytes());
+                    any = false;
+                }
+            }
+            c => {
+                word.push(c);
+                any = true;
+            }
+        }
+    }
+    if any {
+        args.push(word.into_bytes());
+    }
+    args
+}
+
+/// The process start-up std needs on Symbian: the cleanup stack, then argc/argv for `env::args`.
 pub fn init() {
     cleanup_stack();
-    let mut argc: c_int = 0;
-    let mut argv: *mut *mut c_char = crate::ptr::null_mut();
-    let mut envp: *mut *mut c_char = crate::ptr::null_mut();
-    // SAFETY: crt0 fills the three outputs.
-    unsafe {
-        crt0(&mut argc, &mut argv, &mut envp);
-        crate::sys::args::init(argc as isize, argv as *const *const u8);
-    }
+    // argv lives for the whole process, as a C program's does
+    let mut argv: Vec<*const u8> = kernel_args()
+        .into_iter()
+        .map(|mut a| {
+            a.push(0);
+            a.leak().as_ptr()
+        })
+        .collect();
+    let argc = argv.len() as isize;
+    argv.push(crate::ptr::null());
+    // SAFETY: argc/argv describe NUL-terminated strings that are never freed.
+    unsafe { crate::sys::args::init(argc, argv.leak().as_ptr()) };
 }
+
+// The unwinder entry points std's backtrace code and the unwind crate name: compiled in, never called (Symbian EXEs
+// are panic=abort, without backtraces or a personality routine). Defined here so the linker never pulls libgcc's
+// unwinder, which needs a C++ runtime Symbian does not export.
+macro_rules! no_unwinder {
+    ($($name:ident),* $(,)?) => {
+        $(
+            #[unsafe(no_mangle)]
+            pub extern "C" fn $name() -> ! {
+                crate::process::abort()
+            }
+        )*
+    };
+}
+no_unwinder!(
+    _Unwind_Backtrace,
+    _Unwind_FindEnclosingFunction,
+    _Unwind_GetCFA,
+    _Unwind_GetIP,
+    _Unwind_GetIPInfo,
+    _Unwind_GetLanguageSpecificData,
+    _Unwind_GetRegionStart,
+    _Unwind_GetTextRelBase,
+    _Unwind_GetDataRelBase,
+    _Unwind_VRS_Get,
+    _Unwind_VRS_Set,
+    __gnu_unwind_frame,
+);
